@@ -4,6 +4,7 @@ import serial
 import time
 
 arduino_port = 'COM7'  # Arduino Port
+# (Raspi: '/dev/ttyACM0' atau '/dev/ttyUSB0')
 baud_rate = 9600
 
 try:
