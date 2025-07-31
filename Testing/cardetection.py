@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # Load model
-model = YOLO("yolov8n.pt")
+model = YOLO("../yolov8n.pt")
 
 cams = [
     cv2.VideoCapture(0),  # Webcam 1

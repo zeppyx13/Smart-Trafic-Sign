@@ -15,7 +15,7 @@ except Exception as e:
     print("Gagal membuka port serial:", e)
     ser = None
 
-model = YOLO("yolov8n.pt")
+model = YOLO("../yolov8n.pt")
 
 # === Webcam Setup ===
 cams = [
