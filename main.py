@@ -3,7 +3,7 @@ from ultralytics import YOLO
 import serial
 import time
 
-arduino_port = 'COM7'  # Arduino Port
+arduino_port = 'COM11'  # Arduino Port
 # (Raspi: '/dev/ttyACM0' atau '/dev/ttyUSB0')
 baud_rate = 9600
 

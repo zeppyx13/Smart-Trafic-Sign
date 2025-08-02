@@ -9,9 +9,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
-//channel TCA9548A
-// 0: OLED data 1
-// 1: OLED data 2
+// Pilih channel pada TCA9548A
 void tca_select(uint8_t channel) {
   if (channel > 7) return;
   Wire.beginTransmission(TCA_ADDR);
@@ -19,8 +17,8 @@ void tca_select(uint8_t channel) {
   Wire.endTransmission();
 }
 
-// init oled
-void inisialisasiOLED(uint8_t channel) {
+// Inisialisasi OLED
+void inisialisasiOLED(uint8_t channel, const char* nama) {
   tca_select(channel);
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
     Serial.print("Gagal OLED di channel ");
@@ -30,29 +28,30 @@ void inisialisasiOLED(uint8_t channel) {
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-    display.println("OLED channel " + String(channel));
+    display.println(nama);
     display.display();
   }
 }
 
-// menampilkan data pada OLED yang dipilih
-void tampilkanOLED(uint8_t channel, String arah, String tujuan, String jalur, String status, String eta) {
+// Menampilkan data di OLED tertentu
+void tampilkanOLED(uint8_t channel, const String &arah, const String &tujuan, const String &jalur, const String &status, const String &eta) {
   tca_select(channel);
   display.clearDisplay();
+  display.setTextSize(1);
   display.setCursor(0, 0);
-  display.println("Arah: " + arah);
-  display.println("Tujuan: " + tujuan);
-  display.println("Jalur : " + jalur);
-  display.println("Status: " + status);
-  display.println("ETA   : " + eta + " mnt");
+  display.println("Arah   : " + arah);
+  display.println("Tujuan : " + tujuan);
+  display.println("Jalur  : " + jalur);
+  display.println("Status : " + status);
+  display.println("ETA    : " + eta + " mnt");
   display.display();
 }
 
 void setup() {
   Serial.begin(9600);
   Wire.begin();
-  inisialisasiOLED(0);  // OLED data 1
-  inisialisasiOLED(1);  // OLED data 2
+  inisialisasiOLED(0, "OLED Bandara");
+  inisialisasiOLED(1, "OLED Pelabuhan");
 }
 
 void loop() {
@@ -61,13 +60,11 @@ void loop() {
   while (Serial.available()) {
     char c = Serial.read();
     if (c == '\n') {
-      // data exemple
-      // ⬆|Bandara|2|Padat|15;➡|Pelabuhan|3|Lancar|10
-      int index = 0;
+      // Contoh data: ⬆|Bandara|2|Padat|15;➡|Pelabuhan|3|Lancar|10
       int start = 0;
       while (true) {
         int end = buffer.indexOf(';', start);
-        if (end == -1 || index >= 2) break;
+        if (end == -1) break;
 
         String segmen = buffer.substring(start, end);
         start = end + 1;
@@ -83,11 +80,15 @@ void loop() {
           String jalur = segmen.substring(p2 + 1, p3);
           String status = segmen.substring(p3 + 1, p4);
           String eta = segmen.substring(p4 + 1);
-          tampilkanOLED(index, arah, tujuan, jalur, status, eta);
-        }
-        index++;
-      }
 
+          // Cek tujuan dan kirim ke OLED yang sesuai
+          if (tujuan.equalsIgnoreCase("Bandara")) {
+            tampilkanOLED(0, arah, tujuan, jalur, status, eta);
+          } else if (tujuan.equalsIgnoreCase("Pelabuhan")) {
+            tampilkanOLED(1, arah, tujuan, jalur, status, eta);
+          }
+        }
+      }
       buffer = "";
     } else {
       buffer += c;
