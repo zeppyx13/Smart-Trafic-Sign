@@ -27,6 +27,11 @@ ports = {
     "palang_pelabuhan": '/dev/ttyACM2'
 }
 baud_rate = 9600
+def oled_display(text):
+    draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
+    draw.text((0, 0), text, font=font, fill=255)
+    oled.image(image)
+    oled.show()
 
 serial_connections = {}
 for name, port in ports.items():
@@ -34,9 +39,11 @@ for name, port in ports.items():
         ser = serial.Serial(port, baud_rate, timeout=1)
         time.sleep(2)
         print(f"Serial terhubung ke {port} untuk {name}")
+        oled_display(f"Serial {name} OK")
         serial_connections[name] = ser
     except Exception as e:
         print(f"Gagal membuka port {port} untuk {name}: {e}")
+        oled_display(f"Serial {name} GAGAL")
         serial_connections[name] = None
 
 model = YOLO("yolov8n.pt")
