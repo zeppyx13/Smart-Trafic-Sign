@@ -25,7 +25,7 @@ void inisialisasiOLED(uint8_t channel, const char* nama) {
     Serial.println(channel);
   } else {
     display.clearDisplay();
-    display.setTextSize(1);
+    display.setTextSize(5);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
     display.println(nama);
