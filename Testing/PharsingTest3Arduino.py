@@ -3,9 +3,9 @@ import time
 import json
 
 port = {
-    "kota": "/dev/ttyACM0",
-    "bandara": "/dev/ttyACM1",
-    "pelabuhan": "/dev/ttyACM2"
+    "kota": "/dev/ttyUSB0",
+    "bandara": "/dev/ttyUSB1",
+    "pelabuhan": "/dev/ttyUSB2"
 }
 baud_rate = 9600
 serial_connections = {}
