@@ -1,97 +1,169 @@
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <LiquidCrystal_I2C.h>
+#include <ArduinoJson.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_ADDR 0x3C
-#define TCA_ADDR 0x70
+// Atur lokasi palang: "kota", "bandara", atau "pelabuhan"
+#define PALANG_LOKASI "kota"
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
+// Inisialisasi LCD 20x4
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-// Pilih channel pada TCA9548A
-void tca_select(uint8_t channel) {
-  if (channel > 7) return;
-  Wire.beginTransmission(TCA_ADDR);
-  Wire.write(1 << channel);
-  Wire.endTransmission();
-}
+// Karakter panah custom
+byte arrowStraight[8] = {
+  0b00100, 0b00100, 0b01110, 0b10101,
+  0b00100, 0b00100, 0b00100, 0b00000
+};
 
-// Inisialisasi OLED
-void inisialisasiOLED(uint8_t channel, const char* nama) {
-  tca_select(channel);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
-    Serial.print("Gagal OLED di channel ");
-    Serial.println(channel);
-  } else {
-    display.clearDisplay();
-    display.setTextSize(5);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(nama);
-    display.display();
-  }
-}
+byte arrowLeftTurn[8] = {
+  0b00100, 0b01000, 0b11110, 0b01001,
+  0b00110, 0b00000, 0b00000, 0b00000
+};
 
-// Menampilkan data di OLED tertentu
-void tampilkanOLED(uint8_t channel, const String &arah, const String &tujuan, const String &jalur, const String &status, const String &eta) {
-  tca_select(channel);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0, 0);
-  display.println("Arah   : " + arah);
-  display.println("Tujuan : " + tujuan);
-  display.println("Jalur  : " + jalur);
-  display.println("Status : " + status);
-  display.println("ETA    : " + eta + " mnt");
-  display.display();
-}
+byte arrowRightTurn[8] = {
+  0b00100, 0b00010, 0b01111, 0b10010,
+  0b01100, 0b00000, 0b00000, 0b00000
+};
+
+unsigned long lastDataTime = 0;
+const unsigned long timeout = 5000;
+
+// Buffer pembacaan serial
+String jsonBuffer = "";
 
 void setup() {
   Serial.begin(9600);
-  Wire.begin();
-  inisialisasiOLED(0, "OLED Bandara");
-  inisialisasiOLED(1, "OLED Pelabuhan");
+  lcd.init();
+  lcd.backlight();
+
+  lcd.createChar(0, arrowStraight);
+  lcd.createChar(1, arrowLeftTurn);
+  lcd.createChar(2, arrowRightTurn);
+
+  tampilkanMenunggu();
 }
 
 void loop() {
-  static String buffer = "";
-
   while (Serial.available()) {
     char c = Serial.read();
     if (c == '\n') {
-      // Contoh data: ⬆|Bandara|2|Padat|15;➡|Pelabuhan|3|Lancar|10
-      int start = 0;
-      while (true) {
-        int end = buffer.indexOf(';', start);
-        if (end == -1) break;
-
-        String segmen = buffer.substring(start, end);
-        start = end + 1;
-
-        int p1 = segmen.indexOf('|');
-        int p2 = segmen.indexOf('|', p1 + 1);
-        int p3 = segmen.indexOf('|', p2 + 1);
-        int p4 = segmen.indexOf('|', p3 + 1);
-
-        if (p1 > 0 && p2 > p1 && p3 > p2 && p4 > p3) {
-          String arah = segmen.substring(0, p1);
-          String tujuan = segmen.substring(p1 + 1, p2);
-          String jalur = segmen.substring(p2 + 1, p3);
-          String status = segmen.substring(p3 + 1, p4);
-          String eta = segmen.substring(p4 + 1);
-
-          // Cek tujuan dan kirim ke OLED yang sesuai
-          if (tujuan.equalsIgnoreCase("Bandara")) {
-            tampilkanOLED(0, arah, tujuan, jalur, status, eta);
-          } else if (tujuan.equalsIgnoreCase("Pelabuhan")) {
-            tampilkanOLED(1, arah, tujuan, jalur, status, eta);
-          }
-        }
-      }
-      buffer = "";
+      processJson(jsonBuffer);
+      jsonBuffer = ""; // reset buffer
     } else {
-      buffer += c;
+      jsonBuffer += c;
+      if (jsonBuffer.length() > 1024) {
+        // Data terlalu panjang, reset
+        jsonBuffer = "";
+      }
     }
   }
+
+  if (millis() - lastDataTime > timeout) {
+    tampilkanMenunggu();
+    lastDataTime = millis(); // supaya tidak terus-terusan refresh
+  }
+}
+
+void processJson(String jsonStr) {
+  StaticJsonDocument<1024> doc;
+  DeserializationError error = deserializeJson(doc, jsonStr);
+  if (error) {
+    lcd.clear();
+    lcd.setCursor(5, 1);
+    lcd.print("Tetap Fokus");
+    lcd.setCursor(3, 2);
+    lcd.print("Dalam Berkendara");
+    delay(2000);
+    return;
+  }
+
+  lcd.clear();
+
+  if (strcmp(PALANG_LOKASI, "kota") == 0) {
+    if (doc.containsKey("bandara")) {
+      tampilkanTujuan("Bandara", doc["bandara"].as<JsonObject>());
+    }
+    if (doc.containsKey("pelabuhan")) {
+      tampilkanTujuan("Pelabuhan", doc["pelabuhan"].as<JsonObject>());
+    }
+  } else if (strcmp(PALANG_LOKASI, "bandara") == 0) {
+    if (doc.containsKey("pelabuhan")) {
+      tampilkanTujuan("Pelabuhan", doc["pelabuhan"].as<JsonObject>());
+    }
+  } else if (strcmp(PALANG_LOKASI, "pelabuhan") == 0) {
+    if (doc.containsKey("bandara")) {
+      tampilkanTujuan("Bandara", doc["bandara"].as<JsonObject>());
+    }
+  }
+
+  lastDataTime = millis();
+}
+
+void tampilkanTujuan(const char* nama, JsonObject data) {
+  if (!data.isNull()) {
+    String arah = data["arah"] | "";
+    String jarak = data["jarak"] | "";
+    String status = data["status"] | "";
+    String eta = data["eta"] | "";
+    String alternatif = data["alternatif"] | "";
+
+    // Halaman utama
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.write(getArrowCode(arah));
+    lcd.print(" ");
+    lcd.print(nama);
+    lcd.print(" ");
+    lcd.print(jarak);
+
+    lcd.setCursor(0, 1);
+    lcd.print("--------------------");
+
+    lcd.setCursor(0, 2);
+    lcd.print("Status : ");
+    lcd.print(status);
+
+    lcd.setCursor(0, 3);
+    lcd.print("ETA    : ");
+    lcd.print(eta);
+    lcd.print(" mnt");
+
+    delay(4000);
+
+    // Halaman alternatif arah
+    status.toLowerCase();
+    if ((status == "padat" || status == "macet") && alternatif.length() > 0) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Alternatif Arah:");
+      lcd.setCursor(0, 1);
+      lcd.print("--------------------");
+
+      lcd.setCursor(0, 2);
+      if (alternatif.length() > 20) {
+        lcd.print(alternatif.substring(0, 20));
+        lcd.setCursor(0, 3);
+        lcd.print(alternatif.substring(20));
+      } else {
+        lcd.print(alternatif);
+        lcd.setCursor(0, 3);
+        lcd.print("> Coba rute lain");
+      }
+
+      delay(4000);
+    }
+  }
+}
+
+byte getArrowCode(String arah) {
+  arah.toLowerCase();
+  if (arah == "lurus") return 0;
+  else if (arah == "kiri" || arah == "belok kiri") return 1;
+  else if (arah == "kanan" || arah == "belok kanan") return 2;
+  else return 0;
+}
+
+void tampilkanMenunggu() {
+  lcd.clear();
+  lcd.setCursor(2, 1);
+  lcd.print("Menunggu data...");
 }

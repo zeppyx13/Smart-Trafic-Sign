@@ -19,7 +19,6 @@ ports = {
 
 baud_rate = 9600
 
-# Inisialisasi koneksi serial
 serial_connections = {}
 for name, port in ports.items():
     try:
@@ -30,21 +29,16 @@ for name, port in ports.items():
     except Exception as e:
         print(f"[ERROR] Gagal membuka port {port} untuk {name}: {e}")
         serial_connections[name] = None
-
-# Inisialisasi model YOLO
 model = YOLO("yolov8n.pt")
 
-# Buka dua kamera
 cams = [
-    cv2.VideoCapture(0),  # Webcam untuk Bandara
-    cv2.VideoCapture(4),  # Webcam untuk Pelabuhan
+    cv2.VideoCapture(0),
+    cv2.VideoCapture(4),
 ]
 
-# ID kendaraan dari COCO: car, motorbike, bus, truck
 id_kendaraan = [2, 3, 5, 7]
 nama_kendaraan = {2: 'Car', 3: 'Motor', 5: 'Bus', 7: 'Truck'}
 
-# Menentukan status lalu lintas berdasarkan jumlah kendaraan
 def status_lalu_lintas(jumlah):
     if jumlah >= 9:
         return "macet", "55 menit"
@@ -80,7 +74,6 @@ def proses_frame(frame, label_arah):
 try:
     waktu_kirim = time.time()
     while True:
-        # === Webcam Bandara ===
         ret0, frame0 = cams[0].read()
         if ret0:
             frame0 = cv2.resize(frame0, (640, 480))
@@ -89,7 +82,6 @@ try:
         else:
             status_bandara, eta_bandara = "unknown", "0 menit"
 
-        # === Webcam Pelabuhan ===
         ret1, frame1 = cams[1].read()
         if ret1:
             frame1 = cv2.resize(frame1, (640, 480))
@@ -98,9 +90,6 @@ try:
         else:
             status_pelabuhan, eta_pelabuhan = "unknown", "0 menit"
 
-        # === Format JSON per palang ===
-
-        # Palang di KOTA: menampilkan info Bandara & Pelabuhan
         data_palangkota = {
             "bandara": {
                 "arah": "lurus",
@@ -117,8 +106,6 @@ try:
                 "alternatif": "via Bandara" if status_pelabuhan in ["padat", "macet"] else ""
             }
         }
-
-        # Palang di BANDARA: hanya bisa ke Pelabuhan
         data_palangbandara = {
             "pelabuhan": {
                 "arah": "kiri",
@@ -128,8 +115,6 @@ try:
                 "alternatif": "via Kota lalu ke Pelabuhan" if status_pelabuhan in ["padat", "macet"] else ""
             }
         }
-
-        # Palang di PELABUHAN: hanya bisa ke Bandara
         data_palangpelabuhan = {
             "bandara": {
                 "arah": "kanan",
@@ -140,7 +125,7 @@ try:
             }
         }
 
-        # Kirim ke Arduino setiap 5 detik
+        # Kirim ke Arduino
         if time.time() - waktu_kirim > 3:
             for name, ser in serial_connections.items():
                 if ser and ser.is_open:
@@ -157,7 +142,6 @@ try:
                         ser.write(json_data.encode())
                         print(f"[Terkirim ke {name}]: {json_data.strip()}")
 
-                        # Baca respon dari Arduino jika ada
                         while ser.in_waiting > 0:
                             response = ser.readline().decode('utf-8', errors='replace').strip()
                             if response:
