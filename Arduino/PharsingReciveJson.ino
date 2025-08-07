@@ -2,10 +2,12 @@
 #include <LiquidCrystal_I2C.h>
 #include <ArduinoJson.h>
 
-// Inisialisasi LCD I2C, biasanya alamat 0x27 atau 0x3F
+// Ganti alamat jika perlu: 0x27 atau 0x3F
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-const char* DEVICE_NAME = "kota";  // <-- Ubah sesuai: "kota", "bandara", atau "pelabuhan"
+// Ganti sesuai lokasi alat: "kota", "bandara", atau "pelabuhan"
+const char* DEVICE_NAME = "kota";
+
 String inputString = "";
 
 void setup() {
@@ -29,38 +31,48 @@ void loop() {
   }
 }
 
-// Fungsi untuk memproses JSON
 void processData(String jsonData) {
-  StaticJsonDocument<256> doc;
+  StaticJsonDocument<512> doc;
   DeserializationError error = deserializeJson(doc, jsonData);
 
   if (error) {
-    Serial.println("JSON Error");
+    Serial.println("JSON parsing error");
     return;
   }
 
-  const char* nama = doc["nama"];
-  int jumlah = doc["jumlah"];
-  const char* status = doc["status"];
-  int eta = doc["eta"];
-
-  // Tampilkan ke LCD
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Device: ");
+  lcd.print("Dev: ");
   lcd.print(DEVICE_NAME);
 
-  lcd.setCursor(0, 1);
-  lcd.print("Nama: ");
-  lcd.print(nama);
+  if (strcmp(DEVICE_NAME, "kota") == 0) {
+    showRow(1, doc["bandara"], "BND");
+    showRow(2, doc["pelabuhan"], "PLB");
+  } else if (strcmp(DEVICE_NAME, "bandara") == 0) {
+    showRow(1, doc["pelabuhan"], "PLB");
+  } else if (strcmp(DEVICE_NAME, "pelabuhan") == 0) {
+    showRow(1, doc["bandara"], "BND");
+  }
+}
 
-  lcd.setCursor(0, 2);
-  lcd.print("Jumlah: ");
-  lcd.print(jumlah);
+// Tampilkan satu baris info tujuan
+void showRow(int row, JsonVariant data, const char* label) {
+  if (!data.isNull()) {
+    String status = data["status"] | "null";
+    String arah = data["arah"] | "-";
+    String jarak = data["jarak"] | "-";
+    String eta = data["eta"] | "-";
 
-  lcd.setCursor(0, 3);
-  lcd.print(status);
-  lcd.print(" ETA: ");
-  lcd.print(eta);
-  lcd.print("m");
+    lcd.setCursor(0, row);
+    lcd.print(label);
+    lcd.print(" ");
+    lcd.print(status);
+
+    lcd.setCursor(0, row + 1);
+    lcd.print(arah);
+    lcd.print(" ");
+    lcd.print(jarak);
+    lcd.print(" ");
+    lcd.print(eta);
+  }
 }
