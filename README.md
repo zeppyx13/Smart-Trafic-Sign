@@ -8,8 +8,8 @@ Smart Traffic Sign Berbasis Pengenalan Kendaraan dan AI untuk Manajemen Lalu Lin
 - Multiple Camera
 - Realtime Monitoring
 - Fully Modular
-- Trafic Jam Detection
-
+- Arduino Integration
+- Dynamic Traffic Sign Display
 ## ⚙️Installation
 
 
@@ -40,7 +40,7 @@ Atau bisa langsung menggunakan nama `yolov8n.pt` jika sudah tersedia otomatis sa
 ### 5. Hubungkan Hardware
 
 * Sambungkan webcam ke port USB.
-* Sambungkan Arduino ke port COM dan pastikan menggunakan baud rate yang sesuai (default: 9600).
+* Sambungkan Arduino ke port COM dan pastikan menggunakan baud rate (default: 9600).
 * Cek port Arduino dengan Device Manager.
 
 ### 6. Jalankan Program
