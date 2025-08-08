@@ -1,20 +1,21 @@
 import cv2
-
-cap = cv2.VideoCapture(0)
-
-if not cap.isOpened():
-    print("Webcam gak mau  kleng!")
-    exit()
+cam = {
+    "kamera 1": cv2.VideoCapture(0),
+    "kamera 2": cv2.VideoCapture(1)
+}
+for key in cam:
+    cam[key].set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cam[key].set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 while True:
-    ret, frame = cap.read()
-    if not ret:
-        continue
-
-    cv2.imshow("Tes Webcam", frame)
-
-    if cv2.waitKey(1) & 0xFF == 27: #ESC untuk keluar
+    for key in cam:
+        ret, frame = cam[key].read()
+        if ret:
+            cv2.imshow(key, frame)
+        else:
+            print(f"Gagal membaca dari {key}")
+    if cv2.waitKey(1) & 0xFF == 27:
         break
-
-cap.release()
+for key in cam:
+    cam[key].release()
 cv2.destroyAllWindows()
