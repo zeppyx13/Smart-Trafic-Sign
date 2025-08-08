@@ -13,7 +13,6 @@ ports = {
 }
 
 baud_rate = 9600
-
 serial_connections = {}
 for name, port in ports.items():
     try:
@@ -24,6 +23,7 @@ for name, port in ports.items():
     except Exception as e:
         print(f"[ERROR] Gagal membuka port {port} untuk {name}: {e}")
         serial_connections[name] = None
+
 model = YOLO("yolov8n.pt")
 
 cams = [
@@ -43,10 +43,39 @@ def status_lalu_lintas(jumlah):
         return "sedang", "15 menit"
     else:
         return "lancar", "5 menit"
+
+def parse_eta(eta):
+    if isinstance(eta, (int, float)):
+        return eta
+    eta = eta.lower().replace("menit", "").replace("m", "").strip()
+    try:
+        return int(eta)
+    except:
+        return 1
+
+def trafic_duration(status_bandara, eta_bandara, status_pelabuhan, eta_pelabuhan, total_duration=30):
+    status_score = {
+        "lancar": 1,
+        "sedang": 2,
+        "padat": 3,
+        "macet": 4
+    }
+    score_bandara = status_score.get(status_bandara.lower(), 1)
+    score_pelabuhan = status_score.get(status_pelabuhan.lower(), 1)
+    eta_bandara = parse_eta(eta_bandara)
+    eta_pelabuhan = parse_eta(eta_pelabuhan)
+    beban_bandara = score_bandara * eta_bandara
+    beban_pelabuhan = score_pelabuhan * eta_pelabuhan
+    total_beban = beban_bandara + beban_pelabuhan
+    if total_beban == 0:
+        return {"bandara": total_duration // 2, "pelabuhan": total_duration // 2}
+    durasi_bandara = int((beban_bandara / total_beban) * total_duration)
+    durasi_pelabuhan = total_duration - durasi_bandara
+    return {"bandara": durasi_bandara, "pelabuhan": durasi_pelabuhan}
+
 def proses_frame(frame, label_arah):
     hasil = model(frame, verbose=False)[0]
     jumlah = 0
-
     for box in hasil.boxes:
         cls_id = int(box.cls)
         if cls_id in id_kendaraan:
@@ -54,26 +83,12 @@ def proses_frame(frame, label_arah):
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             label = nama_kendaraan.get(cls_id, "Kendaraan")
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     status, eta = status_lalu_lintas(jumlah)
     teks = f"{label_arah}: {status} ({jumlah})"
-    cv2.putText(frame, teks, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                0.7, (255, 0, 0), 2)
-
+    cv2.putText(frame, teks, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
     return frame, status, eta
-def trafic_duration(status_bandara,status_pelabuhan):
-    if status_bandara == "macet":
-        return {"bandara": 20, "pelabuhan": 10}
-    elif status_pelabuhan == "macet":
-        return {"bandara": 10, "pelabuhan": 20}
-    elif status_bandara == "padat":
-        return {"bandara": 18, "pelabuhan": 12}
-    elif status_pelabuhan == "padat":
-        return {"bandara": 12, "pelabuhan": 18}
-    else:
-        return {"bandara": 10, "pelabuhan": 10}
+
 try:
     waktu_kirim = time.time()
     while True:
@@ -109,6 +124,7 @@ try:
                 "alternatif": "via Bandara" if status_pelabuhan in ["padat", "macet"] else ""
             }
         }
+
         data_palangbandara = {
             "pelabuhan": {
                 "arah": "kiri",
@@ -118,6 +134,7 @@ try:
                 "alternatif": "via Kota lalu ke Pelabuhan" if status_pelabuhan in ["padat", "macet"] else ""
             }
         }
+
         data_palangpelabuhan = {
             "bandara": {
                 "arah": "kanan",
@@ -127,14 +144,15 @@ try:
                 "alternatif": "via Kota lalu ke Bandara" if status_bandara in ["padat", "macet"] else ""
             }
         }
-        duration = trafic_duration(status_bandara, status_pelabuhan)
+
+        duration = trafic_duration(status_bandara, eta_bandara, status_pelabuhan, eta_pelabuhan)
         data_trafic_light = {
             "lampu": {
                 "ke_bandara": duration["bandara"],
                 "ke_pelabuhan": duration["pelabuhan"]
             }
         }
-        # Kirim ke Arduino
+
         if time.time() - waktu_kirim > 3:
             for name, ser in serial_connections.items():
                 if ser and ser.is_open:
@@ -156,13 +174,11 @@ try:
                             response = ser.readline().decode('utf-8', errors='replace').strip()
                             if response:
                                 print(f"[Respon Arduino {name}]: {response}")
-
                     except Exception as e:
                         print(f"[ERROR Kirim ke {name}]: {e}")
-
             waktu_kirim = time.time()
 
-        if cv2.waitKey(1) & 0xFF == 27:  # ESC untuk keluar
+        if cv2.waitKey(1) & 0xFF == 27:
             break
 
 except KeyboardInterrupt:
@@ -172,9 +188,7 @@ finally:
     for cam in cams:
         cam.release()
     cv2.destroyAllWindows()
-
     for ser in serial_connections.values():
         if ser and ser.is_open:
             ser.close()
-
     print("[Koneksi serial & kamera ditutup]")
