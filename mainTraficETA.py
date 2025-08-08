@@ -6,10 +6,10 @@ import json
 
 # Port serial Arduino untuk masing-masing palang
 ports = {
-    "palang_kota": 'COM18',
-    "palang_pelabuhan": 'COM17',
-    "palang_bandara": 'COM19',
-    "trafic_light": 'COM20'
+    "palang_kota": 'COM14',
+    "palang_pelabuhan": 'COM15',
+    "palang_bandara": 'COM16',
+    "trafic_light": 'COM21'
 }
 
 baud_rate = 9600
@@ -128,7 +128,7 @@ try:
                 "jarak": "16km",
                 "status": status_pelabuhan,
                 "eta": hitung_eta(16, status_pelabuhan),
-                "alternatif": f"Tidak tersedia jalur alternatif. Harap bersabar. Kondisi saat ini: {status_pelabuhan}"
+                "alternatif": f"Tidak tersedia jalur alternatif.Sabar"
             }
         }
 
@@ -138,7 +138,7 @@ try:
                 "jarak": "7km",
                 "status": status_bandara,
                 "eta": hitung_eta(7, status_bandara),
-                "alternatif": f"Tidak tersedia jalur alternatif. Harap bersabar. Kondisi saat ini: {status_bandara}"
+                "alternatif": f"Tidak tersedia jalur alternatif. Sabar"
             }
         }
 
