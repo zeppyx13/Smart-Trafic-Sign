@@ -1,7 +1,7 @@
 import cv2
 cam = {
     "kamera 1": cv2.VideoCapture(0),
-    "kamera 2": cv2.VideoCapture(1)
+    "kamera 2": cv2.VideoCapture(3)
 }
 for key in cam:
     cam[key].set(cv2.CAP_PROP_FRAME_WIDTH, 640)

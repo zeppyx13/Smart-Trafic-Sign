@@ -6,10 +6,10 @@ import json
 
 # Port serial Arduino untuk masing-masing palang
 ports = {
-    "palang_kota": 'COM5',
-    "palang_pelabuhan": 'COM6',
-    "palang_bandara": 'COM7',
-    "trafic_light": 'COM8'
+    "palang_kota": 'COM18',
+    "palang_pelabuhan": 'COM17',
+    "palang_bandara": 'COM19',
+    "trafic_light": 'COM20'
 }
 
 baud_rate = 9600
@@ -28,7 +28,7 @@ model = YOLO("yolov8n.pt")
 
 cams = [
     cv2.VideoCapture(0),
-    cv2.VideoCapture(4),
+    cv2.VideoCapture(3),
 ]
 
 id_kendaraan = [2, 3, 5, 7]
@@ -107,14 +107,14 @@ try:
 
         data_palangkota = {
             "bandara": {
-                "arah": "lurus",
+                "arah": "kiri",
                 "jarak": "5km",
                 "status": status_bandara,
                 "eta": eta_bandara,
                 "alternatif": "via Pelabuhan" if status_bandara in ["padat", "macet"] else ""
             },
             "pelabuhan": {
-                "arah": "kanan",
+                "arah": "lurus",
                 "jarak": "7km",
                 "status": status_pelabuhan,
                 "eta": eta_pelabuhan,
@@ -128,7 +128,7 @@ try:
                 "jarak": "16km",
                 "status": status_pelabuhan,
                 "eta": hitung_eta(16, status_pelabuhan),
-                "alternatif": "via Kota" if status_pelabuhan in ["padat", "macet"] else ""
+                "alternatif": f"Tidak tersedia jalur alternatif. Harap bersabar. Kondisi saat ini: {status_pelabuhan}"
             }
         }
 
@@ -138,7 +138,7 @@ try:
                 "jarak": "7km",
                 "status": status_bandara,
                 "eta": hitung_eta(7, status_bandara),
-                "alternatif": "via Kota" if status_bandara in ["padat", "macet"] else ""
+                "alternatif": f"Tidak tersedia jalur alternatif. Harap bersabar. Kondisi saat ini: {status_bandara}"
             }
         }
 
