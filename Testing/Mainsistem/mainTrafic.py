@@ -24,7 +24,7 @@ for name, port in ports.items():
         print(f"[ERROR] Gagal membuka port {port} untuk {name}: {e}")
         serial_connections[name] = None
 
-model = YOLO("yolov8n.pt")
+model = YOLO("../../yolov8n.pt")
 
 cams = [
     cv2.VideoCapture(0),
