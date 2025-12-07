@@ -1,4 +1,3 @@
-# config.py
 ports = {
     "palang_kota": 'COM14',
     "palang_pelabuhan": 'COM15',

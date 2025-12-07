@@ -1,5 +1,3 @@
-# traffic_logic.py
-
 def status_lalu_lintas(jumlah):
     if jumlah >= 9: return "macet"
     elif jumlah >= 6: return "padat"

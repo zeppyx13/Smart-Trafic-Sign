@@ -1,4 +1,3 @@
-# serial_manager.py
 import serial
 import time
 import json
