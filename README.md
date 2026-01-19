@@ -1,6 +1,6 @@
 
 # SIGMA (Smart Intellegence Guidance for Mobility & Automation)
-# GEMASTIK XVIII Project (@DwDhrm7 & @zeppyx13 & Nicho)
+# GEMASTIK XVIII Project [@DwDhrm7] & [@zeppyx13] & Nicho)
 Smart Traffic Sign Berbasis Pengenalan Kendaraan dan AI untuk Manajemen Lalu Lintas Dinamis merupakan sistem cerdas yang memanfaatkan teknologi computer vision dan Machine Learning untuk mendeteksi jenis serta jumlah kendaraan secara real-time melalui kamera. Informasi ini diproses untuk menentukan kondisi lalu lintas (lancar, padat, atau macet), kemudian ditampilkan secara dinamis melalui papan jalan elektronik (smart sign). Sistem ini bertujuan untuk membantu pengemudi mengambil keputusan rute secara lebih efisien dan responsif terhadap situasi aktual di lapangan.
 
 ## 🧪Features
