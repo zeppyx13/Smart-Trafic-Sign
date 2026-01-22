@@ -1,7 +1,6 @@
 
 # SIGMA (Smart Intellegence Guidance for Mobility & Automation)
-# GEMASTIK XVIII Project By
-## Meembers :
+# GEMASTIK XVIII Project By :
 ### 1. [Gung Nanda](https://www.github.com/zeppyx13)
 ### 2. [Nicho](https://github.com/arstd)
 ### 3. [Dewa Dharma](https://www.github.com/DwDhrm7)
